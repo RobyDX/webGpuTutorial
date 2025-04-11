@@ -1,6 +1,9 @@
 In questo repository potete trovare un set di tutorial relativo a WebGPU, la nuova API per la realizzazione di applicazioni grafiche ad alte prestazioni all'interno del browser, descritti nella sezione WebGPU del mio blog
 https://www.notjustcode.org
 
+Demo al link
+https://webgpu.notjustcode.org/
+
 Guida
 Scaricate il repository
 Lanciate il comando npm i per installare i repository
