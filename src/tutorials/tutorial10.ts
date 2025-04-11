@@ -55,7 +55,8 @@ export class Tutorial10 extends baseRendering {
         struct Vertex {
             @location(0) position: vec3f,
             @location(1) texcoord: vec2f,
-            @location(2) instanceData: vec4f,
+            @location(2) color: vec4f,
+            @builtin(instance_index) instance:u32
         };
 
         struct VertexOut {
@@ -77,9 +78,9 @@ export class Tutorial10 extends baseRendering {
         @vertex fn vs(v:Vertex) -> VertexOut 
         {
             var vOut:VertexOut;
-            vOut.position=transform.world[i32(v.instanceData.x)] *vec4f(v.position, 1.0);
+            vOut.position=transform.world[i32(v.instance)] *vec4f(v.position, 1.0);
             vOut.texcoord=v.texcoord;
-            vOut.color=v.instanceData.yzw;
+            vOut.color=v.color.xyz;
             return vOut;
         }
  
@@ -173,22 +174,22 @@ export class Tutorial10 extends baseRendering {
 
         //instance buffer
         const instanceData: number[] = [
+            1, 1, 1, 1,
+            1, 0, 0, 1,
+            0, 1, 0, 1,
+            0, 0, 1, 1,
+            1, 0, 1, 1,
             0, 1, 1, 1,
-            1, 1, 0, 0,
-            2, 0, 1, 0,
-            3, 0, 0, 1,
-            4, 1, 0, 1,
-            5, 0, 1, 1,
-            6, 1, 1, 0,
-            7, 1, 1, 1,
-            8, 1, 0.5, 0.5,
-            9, 0.5, 0.5, 1,
-            10, 0.5, 1, 0.5,
-            11, 0.5, 1, 1,
-            12, 1, 0.5, 1,
-            13, 1, 1, 0.5,
-            14, 0.5, 0.5, 0.5,
-            15, 0.1, 0.1, 0.1,
+            1, 1, 0, 1,
+            1, 1, 1, 1,
+            1, 0.5, 0.5, 1,
+            0.5, 0.5, 1, 1,
+            0.5, 1, 0.5, 1,
+            0.5, 1, 1, 1,
+            1, 0.5, 1, 1,
+            1, 1, 0.5, 1,
+            0.5, 0.5, 0.5, 1,
+            0.1, 0.1, 0.1, 1,
         ];
 
         //crea un vertex buffer per l'instancing
