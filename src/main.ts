@@ -20,7 +20,11 @@ const modules = import.meta.glob<Record<string, new () => baseRendering>>(
 const sources = import.meta.glob<string>(
     "./tutorials/tutorial*.ts", { query: "?raw", import: "default", eager: true });
 
-const links = document.querySelectorAll<HTMLAnchorElement>("ol li a");
+//le tile della pagina, una per tutorial
+const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("a.tile[data-tutorial]"));
+
+const prevButton = document.querySelector<HTMLButtonElement>("#prev")!;
+const nextButton = document.querySelector<HTMLButtonElement>("#next")!;
 
 let t: baseRendering | null = null;
 
@@ -28,7 +32,24 @@ let t: baseRendering | null = null;
 async function load(link: HTMLAnchorElement) {
     const n = link.getAttribute("data-tutorial")!;
 
-    document.querySelector("#tutorial-title")!.innerHTML = link.title;
+    //pannello con numero, titolo e descrizione del tutorial
+    document.querySelector("#tutorial-number")!.textContent = `Tutorial ${link.dataset.number}`;
+    document.querySelector("#tutorial-title")!.textContent = link.querySelector(".tile-name")!.textContent;
+    document.querySelector("#tutorial-description")!.textContent = link.dataset.description ?? "";
+
+    //il pannello assume il colore della categoria del tutorial
+    document.querySelector<HTMLElement>(".panel")!.style.setProperty("--accent", getComputedStyle(link).getPropertyValue("--accent"));
+
+    //evidenzia la tile selezionata e aggiorna i pulsanti avanti/indietro
+    links.forEach(l => {
+        l.classList.toggle("active", l === link);
+        l.toggleAttribute("aria-current", l === link);
+    });
+    const index = links.indexOf(link);
+    prevButton.disabled = index <= 0;
+    nextButton.disabled = index >= links.length - 1;
+
+    //il primo paragrafo della pagina (#info) è quello in cui i tutorial scrivono i propri messaggi
     document.querySelector("p")!.innerHTML = "";
     document.querySelector("canvas")!.onclick = () => { };
 
@@ -64,14 +85,36 @@ async function load(link: HTMLAnchorElement) {
 //i click vengono eseguiti uno alla volta, così un tutorial non parte mentre il precedente è ancora in chiusura
 let queue: Promise<void> = Promise.resolve();
 
+//seleziona un tutorial: aggiorna l'indirizzo (così si può condividere il link) e lo carica
+function select(link: HTMLAnchorElement, scroll: boolean) {
+    history.replaceState(null, "", "#" + link.dataset.tutorial);
+    if (scroll) {
+        //riporta in alto, dove si trova la canvas
+        document.querySelector("#viewer")!.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    queue = queue.then(() => load(link));
+}
+
 links.forEach(link => {
     link.addEventListener("click", (event) => {
         event.preventDefault();
-        queue = queue.then(() => load(link));
+        select(link, true);
     });
+});
+
+//pulsanti per passare al tutorial precedente o successivo
+const current = () => links.findIndex(l => l.classList.contains("active"));
+prevButton.addEventListener("click", () => select(links[current() - 1], false));
+nextButton.addEventListener("click", () => select(links[current() + 1], false));
+
+//se l'indirizzo cambia a mano (o con i pulsanti del browser) si carica il tutorial indicato
+window.addEventListener("hashchange", () => {
+    const link = links.find(l => l.dataset.tutorial === location.hash.replace("#", ""));
+    if (link && !link.classList.contains("active")) {
+        select(link, false);
+    }
 });
 
 //tutorial mostrato all'avvio: quello indicato nell'indirizzo (es. #21), altrimenti il tutorial 08
 const start = location.hash.replace("#", "");
-(document.querySelector<HTMLAnchorElement>(`ol li a[data-tutorial="${start}"]`)
-    ?? document.querySelector<HTMLAnchorElement>('ol li a[data-tutorial="08"]'))!.click();
+select(links.find(l => l.dataset.tutorial === start) ?? links.find(l => l.dataset.tutorial === "08")!, false);

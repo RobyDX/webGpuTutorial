@@ -214,7 +214,7 @@ export class Tutorial23 extends baseRendering {
         const jointCount = scene.skin.joints.length;
 
         document.querySelector("p")!.innerHTML =
-            `Animazione "${animation.name}": ${animation.duration.toFixed(2)} secondi, ${jointCount} ossa.<br>Trascina per ruotare, rotella per lo zoom, clicca per mettere in pausa.`;
+            `Animazione "${animation.name}": ${animation.duration.toFixed(2)} secondi, ${jointCount} ossa.`;
         this.initMouse(canvas);
 
         this.initSkeleton();

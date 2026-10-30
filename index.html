@@ -5,110 +5,522 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/webgpu.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tutorial interattivi su WebGPU: dalla prima canvas fino a illuminazione, ombre, modelli glTF e animazioni." />
   <title>WebGPU Tutorial</title>
   <style>
-    body {
-      background-color: red;
-      background-image: url("background.png");
+    :root {
+      --bg: #0a0f1f;
+      --bg-glow: rgba(79, 140, 255, 0.18);
+      --surface: #121a31;
+      --surface-2: #19234a;
+      --border: #26325c;
+      --text: #e9eefc;
+      --muted: #9aa8cc;
+      --accent: #5b94ff;
+      --radius: 16px;
+      --code-bg: #0c1226;
     }
 
-    canvas {
-      max-width: 100%;
-      height: auto;
-      border: 1px solid;
-      background-color: white;
-    }
-
-    textarea {
-      box-sizing: border-box;
-    }
-
-    /* su schermi stretti la canvas e l'elenco dei tutorial vanno uno sotto l'altro */
-    @media (max-width: 900px) {
-      body>div {
-        flex-direction: column;
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f3f6fd;
+        --bg-glow: rgba(79, 140, 255, 0.16);
+        --surface: #ffffff;
+        --surface-2: #eaf0ff;
+        --border: #d6def2;
+        --text: #141b34;
+        --muted: #56648a;
+        --accent: #2f6df0;
+        --code-bg: #f8faff;
       }
     }
 
-    body>div {
-      display: flex;
+    * {
+      box-sizing: border-box;
     }
 
-    body>div>div {
-      margin: 0 20px;
-      padding: 10px;
-      flex: 1
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background-color: var(--bg);
+      background-image: radial-gradient(900px 420px at 50% -120px, var(--bg-glow), transparent);
+      background-repeat: no-repeat;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    /* ---------- intestazione ---------- */
+    .hero {
+      text-align: center;
+      padding: 44px 0 28px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw + 1rem, 3.2rem);
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #5b94ff, #a78bfa 55%, #f472b6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero .subtitle {
+      margin: 10px auto 0;
+      max-width: 640px;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .hero .subtitle a {
+      color: var(--accent);
+    }
+
+    /* ---------- visualizzatore: canvas + pannello ---------- */
+    .viewer {
+      display: grid;
+      grid-template-columns: minmax(0, 800px) minmax(280px, 1fr);
+      gap: 24px;
+      align-items: start;
+      scroll-margin-top: 16px;
+    }
+
+    .canvas-wrap {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.6);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      background-color: white;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-tag {
+      align-self: flex-start;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 1.6rem;
+      line-height: 1.2;
+    }
+
+    #tutorial-description {
+      color: var(--muted);
+    }
+
+    /* testo di stato scritto dai tutorial (tempi, istruzioni...): deve restare l'unico paragrafo della pagina */
+    #info {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      font-size: 0.95rem;
+    }
+
+    #info:empty {
+      display: none;
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .nav button {
+      flex: 1;
+      font: inherit;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+
+    .nav button:hover:not(:disabled) {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .nav button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* ---------- tile ---------- */
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px 20px;
+      margin: 40px 0 16px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .legend-item i {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 14px;
+    }
+
+    .tile {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 16px 16px 16px 18px;
+      text-decoration: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+
+    /* barra colorata a sinistra: colore della categoria */
+    .tile::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--accent);
+    }
+
+    .tile:hover,
+    .tile:focus-visible {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 14px 30px -18px var(--accent);
+      outline: none;
+    }
+
+    .tile.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+      box-shadow: 0 0 0 1px var(--accent), 0 14px 30px -18px var(--accent);
+    }
+
+    .tile-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tile-number {
+      font-size: 1.7rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tile-tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .tile-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .tile-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .c-base { --accent: #38bdf8; }
+    .c-d3 { --accent: #a78bfa; }
+    .c-opt { --accent: #34d399; }
+    .c-fx { --accent: #fbbf24; }
+    .c-compute { --accent: #fb7185; }
+    .c-light { --accent: #f472b6; }
+
+    /* ---------- codice ---------- */
+    .code {
+      margin-top: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .code summary {
+      cursor: pointer;
+      padding: 14px 20px;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    #codetxt {
+      display: block;
+      width: 100%;
+      height: 520px;
+      resize: vertical;
+      border: 0;
+      border-top: 1px solid var(--border);
+      padding: 16px 20px;
+      color: var(--text);
+      background: var(--code-bg);
+      font: 0.85rem/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      tab-size: 4;
+    }
+
+    footer {
+      margin-top: 36px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--accent);
+    }
+
+    @media (max-width: 960px) {
+      .viewer {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+      }
     }
   </style>
 </head>
 
 <body>
-  <h1 style="text-align: center;">Web GPU Tutorial</h1>
-  <div>
-    <canvas width="800" height="600"></canvas>
-    <div style="background-color: white;">
-      <div>
-        <div>
-          <strong>Seleziona uno dei Tutorial per eseguirlo</strong>
-        </div>
-        <ol>
-          <li><a href="#" title="Inizializzazione un'app WebGPU. Il risultato sarà una canvas vuota e bianca"
-              data-tutorial="00">Inizializza Web GPU</a></li>
-          <li><a href="#" title="Clear del Render Target. Clicca sullo schermo per cambiare il colore dello sfondo"
-              data-tutorial="01">Render Target</a></li>
-          <li><a href="#" title="Rendering di una geomatria di base tramite Vertex e Fragment Shader"
-              data-tutorial="02">Shaders</a></li>
-          <li><a href="#" title="Utilizzo di un Buffer per memorizzare la geometria" data-tutorial="03">Vertex
-              Buffer</a>
-          </li>
-          <li><a href="#" title="Ottimizzazione della gestione della geometria tramite gli index buffer"
-              data-tutorial="04">Index
-              Buffer</a></li>
-          <li><a href="#" title="Gestione dello scambio di dati tra gli Shader ed il codice tramite Uniform Shader"
-              data-tutorial="05">Uniform
-              Buffer</a></li>
-          <li><a href="#"
-              title="Gestione della profondità tramite Depth Buffer. I due quadrati si trovano ad altezze diverse"
-              data-tutorial="06">Depth Buffer</a></li>
-          <li><a href="#" title="Gestione delle matrici di trasformazione" data-tutorial="07">Matrici di
-              Trasformazione</a></li>
-          <li><a href="#" title="Aggiunta di texture ai modelli" data-tutorial="08">Texture</a></li>
-          <li><a href="#" title="Ottimizzazione tramite Render Bundle." data-tutorial="09">Render Bundle</a></li>
-          <li><a href="#" title="Moltiplicazione di vertex buffer tramite Geometry Instancing"
-              data-tutorial="10">Geometry Instancing</a></li>
-          <li><a href="#"
-              title="Miglioramento della qualità tramite Multiple Sample Anti Aliasing. Clicca per attivare/disattivare ed osservare i bordi"
-              data-tutorial="11">MSAA</a></li>
-          <li><a href="#" title="Realizzazione effetti tramite Rendering su Texture" data-tutorial="12">Render to
-              Texture</a></li>
-          <li><a href="#" title="Utilizzo di Video come Texture per i modelli" data-tutorial="13">Utilizzo di Video</a>
-          </li>
-          <li><a href="#"
-              title="Compute Shader. Clicca nuovamente per eseguire altri test. Non verrà visualizzato nulla nella canvas"
-              data-tutorial="14">Compute
-              Shader</a></li>
-          <li><a href="#"
-              title="Sobel Filter tramite Compute Shader. Clicca sullo schermo per alternare la visualizzazione"
-              data-tutorial="15">Sobel Filter</a></li>
-          <li><a href="#" title="Maschere tramite Stencil Buffer" data-tutorial="16">Stencil Buffer</a></li>
-
-          <li><a href="#" title="Statistiche di rendering" data-tutorial="17">Query Set</a></li>
-          <li><a href="#" title="Utilizzare una canvas come texture per disegnare testo" data-tutorial="18">Testo su una Texture</a></li>
-          <li><a href="#" title="Riduzione dello sfarfallio delle texture lontane tramite Mipmap. Clicca sullo schermo per attivare/disattivare le mipmap" data-tutorial="19">Mipmap</a></li>
-          <li><a href="#" title="Illuminazione per pixel: luce ambiente, diffusa e speculare" data-tutorial="20">Illuminazione</a></li>
-          <li><a href="#" title="Ombre tramite Shadow Map e rendering in due passaggi" data-tutorial="21">Shadow Map</a></li>
-          <li><a href="#" title="Caricamento di un modello 3D dal formato glTF" data-tutorial="22">Modelli glTF</a></li>
-          <li><a href="#" title="Animazione di un personaggio tramite scheletro e skinning. Trascina per ruotare, rotella per lo zoom, clic per mettere in pausa" data-tutorial="23">Animazioni</a></li>
-
-        </ol>
-        <hr>
-        <h3 id="tutorial-title">&nbsp;</h3>
-        <p>&nbsp;</p>
+  <div class="page">
+    <header class="hero">
+      <h1>WebGPU Tutorial</h1>
+      <div class="subtitle">
+        24 tutorial interattivi: dalla prima canvas fino a illuminazione, ombre, modelli glTF e animazioni.
+        Descritti nella sezione WebGPU di <a href="https://www.notjustcode.org">notjustcode.org</a>.
       </div>
+    </header>
+
+    <!-- NOTA: il primo tag p della pagina è #info, dove i tutorial scrivono i propri messaggi (document.querySelector("p")) -->
+    <section class="viewer" id="viewer">
+      <div class="canvas-wrap">
+        <canvas width="800" height="600"></canvas>
+      </div>
+
+      <aside class="panel">
+        <span class="panel-tag" id="tutorial-number">&nbsp;</span>
+        <h2 id="tutorial-title">&nbsp;</h2>
+        <div id="tutorial-description"></div>
+        <p id="info"></p>
+        <div class="nav">
+          <button type="button" id="prev">&larr; Precedente</button>
+          <button type="button" id="next">Successivo &rarr;</button>
+        </div>
+      </aside>
+    </section>
+
+    <div class="section-head">
+      <h2>Scegli un tutorial</h2>
+      <div class="legend"><span class="legend-item c-base"><i></i>Base</span><span class="legend-item c-d3"><i></i>3D</span><span class="legend-item c-opt"><i></i>Ottimizzazione</span><span class="legend-item c-fx"><i></i>Effetti</span><span class="legend-item c-compute"><i></i>Compute</span><span class="legend-item c-light"><i></i>Luci e modelli</span></div>
     </div>
+
+    <nav class="grid" aria-label="Elenco dei tutorial">
+        <a class="tile c-base" href="#00" data-tutorial="00" data-number="01" data-description="Inizializzazione di un'app WebGPU. Il risultato sarà una canvas vuota e bianca">
+          <span class="tile-top"><span class="tile-number">01</span><span class="tile-tag">Base</span></span>
+          <span class="tile-name">Inizializza Web GPU</span>
+          <span class="tile-desc">Adapter, device e canvas: il punto di partenza.</span>
+        </a>
+        <a class="tile c-base" href="#01" data-tutorial="01" data-number="02" data-description="Clear del Render Target. Clicca sullo schermo per cambiare il colore dello sfondo">
+          <span class="tile-top"><span class="tile-number">02</span><span class="tile-tag">Base</span></span>
+          <span class="tile-name">Render Target</span>
+          <span class="tile-desc">Pulire lo schermo con un colore.</span>
+        </a>
+        <a class="tile c-base" href="#02" data-tutorial="02" data-number="03" data-description="Rendering di una geometria di base tramite Vertex e Fragment Shader">
+          <span class="tile-top"><span class="tile-number">03</span><span class="tile-tag">Base</span></span>
+          <span class="tile-name">Shaders</span>
+          <span class="tile-desc">Il primo triangolo con vertex e fragment shader.</span>
+        </a>
+        <a class="tile c-base" href="#03" data-tutorial="03" data-number="04" data-description="Utilizzo di un Buffer per memorizzare la geometria">
+          <span class="tile-top"><span class="tile-number">04</span><span class="tile-tag">Base</span></span>
+          <span class="tile-name">Vertex Buffer</span>
+          <span class="tile-desc">Memorizzare la geometria in un buffer.</span>
+        </a>
+        <a class="tile c-base" href="#04" data-tutorial="04" data-number="05" data-description="Ottimizzazione della gestione della geometria tramite gli index buffer">
+          <span class="tile-top"><span class="tile-number">05</span><span class="tile-tag">Base</span></span>
+          <span class="tile-name">Index Buffer</span>
+          <span class="tile-desc">Riutilizzare i vertici con gli indici.</span>
+        </a>
+        <a class="tile c-base" href="#05" data-tutorial="05" data-number="06" data-description="Gestione dello scambio di dati tra gli Shader ed il codice tramite Uniform Buffer">
+          <span class="tile-top"><span class="tile-number">06</span><span class="tile-tag">Base</span></span>
+          <span class="tile-name">Uniform Buffer</span>
+          <span class="tile-desc">Passare dati dal codice agli shader.</span>
+        </a>
+        <a class="tile c-d3" href="#06" data-tutorial="06" data-number="07" data-description="Gestione della profondità tramite Depth Buffer. I due quadrati si trovano ad altezze diverse">
+          <span class="tile-top"><span class="tile-number">07</span><span class="tile-tag">3D</span></span>
+          <span class="tile-name">Depth Buffer</span>
+          <span class="tile-desc">Gestire la profondità con lo Z-buffer.</span>
+        </a>
+        <a class="tile c-d3" href="#07" data-tutorial="07" data-number="08" data-description="Gestione delle matrici di trasformazione">
+          <span class="tile-top"><span class="tile-number">08</span><span class="tile-tag">3D</span></span>
+          <span class="tile-name">Matrici di Trasformazione</span>
+          <span class="tile-desc">Mondo, camera e proiezione.</span>
+        </a>
+        <a class="tile c-d3" href="#08" data-tutorial="08" data-number="09" data-description="Aggiunta di texture ai modelli">
+          <span class="tile-top"><span class="tile-number">09</span><span class="tile-tag">3D</span></span>
+          <span class="tile-name">Texture</span>
+          <span class="tile-desc">Applicare immagini ai modelli.</span>
+        </a>
+        <a class="tile c-opt" href="#09" data-tutorial="09" data-number="10" data-description="Ottimizzazione tramite Render Bundle.">
+          <span class="tile-top"><span class="tile-number">10</span><span class="tile-tag">Ottimizzazione</span></span>
+          <span class="tile-name">Render Bundle</span>
+          <span class="tile-desc">Registrare i comandi una volta sola.</span>
+        </a>
+        <a class="tile c-opt" href="#10" data-tutorial="10" data-number="11" data-description="Moltiplicazione di vertex buffer tramite Geometry Instancing">
+          <span class="tile-top"><span class="tile-number">11</span><span class="tile-tag">Ottimizzazione</span></span>
+          <span class="tile-name">Geometry Instancing</span>
+          <span class="tile-desc">Moltiplicare un modello in un solo draw.</span>
+        </a>
+        <a class="tile c-opt" href="#11" data-tutorial="11" data-number="12" data-description="Miglioramento della qualità tramite Multiple Sample Anti Aliasing. Clicca per attivare/disattivare ed osservare i bordi">
+          <span class="tile-top"><span class="tile-number">12</span><span class="tile-tag">Ottimizzazione</span></span>
+          <span class="tile-name">MSAA</span>
+          <span class="tile-desc">Bordi più morbidi con l'anti-aliasing.</span>
+        </a>
+        <a class="tile c-fx" href="#12" data-tutorial="12" data-number="13" data-description="Realizzazione effetti tramite Rendering su Texture">
+          <span class="tile-top"><span class="tile-number">13</span><span class="tile-tag">Effetti</span></span>
+          <span class="tile-name">Render to Texture</span>
+          <span class="tile-desc">Disegnare su una texture per creare effetti.</span>
+        </a>
+        <a class="tile c-fx" href="#13" data-tutorial="13" data-number="14" data-description="Utilizzo di Video come Texture per i modelli">
+          <span class="tile-top"><span class="tile-number">14</span><span class="tile-tag">Effetti</span></span>
+          <span class="tile-name">Utilizzo di Video</span>
+          <span class="tile-desc">Un video usato come texture.</span>
+        </a>
+        <a class="tile c-compute" href="#14" data-tutorial="14" data-number="15" data-description="Compute Shader. Clicca nuovamente per eseguire altri test. Non verrà visualizzato nulla nella canvas">
+          <span class="tile-top"><span class="tile-number">15</span><span class="tile-tag">Compute</span></span>
+          <span class="tile-name">Compute Shader</span>
+          <span class="tile-desc">Calcoli generici sulla GPU.</span>
+        </a>
+        <a class="tile c-compute" href="#15" data-tutorial="15" data-number="16" data-description="Sobel Filter tramite Compute Shader. Clicca sullo schermo per alternare la visualizzazione">
+          <span class="tile-top"><span class="tile-number">16</span><span class="tile-tag">Compute</span></span>
+          <span class="tile-name">Sobel Filter</span>
+          <span class="tile-desc">Rilevare i contorni con un compute shader.</span>
+        </a>
+        <a class="tile c-fx" href="#16" data-tutorial="16" data-number="17" data-description="Maschere tramite Stencil Buffer">
+          <span class="tile-top"><span class="tile-number">17</span><span class="tile-tag">Effetti</span></span>
+          <span class="tile-name">Stencil Buffer</span>
+          <span class="tile-desc">Maschere di rendering.</span>
+        </a>
+        <a class="tile c-opt" href="#17" data-tutorial="17" data-number="18" data-description="Statistiche di rendering">
+          <span class="tile-top"><span class="tile-number">18</span><span class="tile-tag">Ottimizzazione</span></span>
+          <span class="tile-name">Query Set</span>
+          <span class="tile-desc">Misurare i tempi di rendering sulla GPU.</span>
+        </a>
+        <a class="tile c-fx" href="#18" data-tutorial="18" data-number="19" data-description="Utilizzare una canvas come texture per disegnare testo">
+          <span class="tile-top"><span class="tile-number">19</span><span class="tile-tag">Effetti</span></span>
+          <span class="tile-name">Testo su una Texture</span>
+          <span class="tile-desc">Scrivere testo con una canvas 2D.</span>
+        </a>
+        <a class="tile c-fx" href="#19" data-tutorial="19" data-number="20" data-description="Riduzione dello sfarfallio delle texture lontane tramite Mipmap. Clicca sullo schermo per attivare/disattivare le mipmap">
+          <span class="tile-top"><span class="tile-number">20</span><span class="tile-tag">Effetti</span></span>
+          <span class="tile-name">Mipmap</span>
+          <span class="tile-desc">Meno sfarfallio per le texture lontane.</span>
+        </a>
+        <a class="tile c-light" href="#20" data-tutorial="20" data-number="21" data-description="Illuminazione per pixel: luce ambiente, diffusa e speculare">
+          <span class="tile-top"><span class="tile-number">21</span><span class="tile-tag">Luci e modelli</span></span>
+          <span class="tile-name">Illuminazione</span>
+          <span class="tile-desc">Luce ambiente, diffusa e speculare.</span>
+        </a>
+        <a class="tile c-light" href="#21" data-tutorial="21" data-number="22" data-description="Ombre tramite Shadow Map e rendering in due passaggi">
+          <span class="tile-top"><span class="tile-number">22</span><span class="tile-tag">Luci e modelli</span></span>
+          <span class="tile-name">Shadow Map</span>
+          <span class="tile-desc">Ombre con due render pass.</span>
+        </a>
+        <a class="tile c-light" href="#22" data-tutorial="22" data-number="23" data-description="Caricamento di un modello 3D dal formato glTF">
+          <span class="tile-top"><span class="tile-number">23</span><span class="tile-tag">Luci e modelli</span></span>
+          <span class="tile-name">Modelli glTF</span>
+          <span class="tile-desc">Caricare un modello 3D da file.</span>
+        </a>
+        <a class="tile c-light" href="#23" data-tutorial="23" data-number="24" data-description="Animazione di un personaggio tramite scheletro e skinning. Trascina per ruotare, rotella per lo zoom, clic per mettere in pausa">
+          <span class="tile-top"><span class="tile-number">24</span><span class="tile-tag">Luci e modelli</span></span>
+          <span class="tile-name">Animazioni</span>
+          <span class="tile-desc">Scheletro e skinning di un personaggio.</span>
+        </a>
+    </nav>
+
+    <details class="code" open>
+      <summary>Codice sorgente del tutorial</summary>
+      <textarea id="codetxt" readonly spellcheck="false" wrap="off"></textarea>
+    </details>
+
+    <footer>
+      Il codice è su <a href="https://github.com/RobyDX/webGpuTutorial">GitHub</a>.
+    </footer>
   </div>
-  <br>
-  <textarea id="codetxt" style="width: 100%;" rows="20" readonly></textarea>
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 
