@@ -41,8 +41,7 @@ export class Tutorial02 extends baseRendering {
         const device = await adapter?.requestDevice();
 
         if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
+            throw new Error("browser o dispositivo non compatibile");
         }
 
         this._device = device;
@@ -50,16 +49,14 @@ export class Tutorial02 extends baseRendering {
         //individua la canvas
         const canvas = document.querySelector('canvas');
         if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
+            throw new Error("canvas non presente nella pagina");
         }
 
         //riceve il context associato alla canvas
         const context = canvas.getContext('webgpu');
 
         if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
+            throw new Error("browser o dispositivo non compatibile");
         }
         this._context = context;
 

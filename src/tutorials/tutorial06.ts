@@ -5,6 +5,7 @@
  */
 
 import { baseRendering } from "../utility/baseRendering";
+import { initWebGpu, createShader } from "../utility/webgpuInit";
 import { Mat4, mat4, vec3 } from 'wgpu-matrix'
 
 export class Tutorial06 extends baseRendering {
@@ -69,39 +70,10 @@ export class Tutorial06 extends baseRendering {
     `;
 
     async init() {
-        //ottengo il device associato alla scheda video
-        const adapter = await navigator.gpu?.requestAdapter();
-        const device = await adapter?.requestDevice();
-
-        if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
-
+        //inizializzazione di device, canvas e contesto (gli stessi passi del tutorial 00, vedi utility/webgpuInit.ts)
+        const { device, canvas, context, format: presentationFormat } = await initWebGpu();
         this._device = device;
-
-        //individua la canvas
-        const canvas = document.querySelector('canvas');
-        if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
-        }
-
-        //riceve il context associato alla canvas
-        const context = canvas.getContext('webgpu');
-
-        if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
         this._context = context;
-
-        //configura il device associandolo alla canvas usata per il rendering
-        const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-        this._context.configure({
-            device: this._device,
-            format: presentationFormat,
-        });
 
         //definisce i 4 vertici di un quadrato
         const vertexData: number[] = [
@@ -153,7 +125,7 @@ export class Tutorial06 extends baseRendering {
         });
 
         //crea lo shader
-        const module = device.createShaderModule({ code: this.shader });
+        const module = await createShader(device, this.shader);
 
         //crea la pipeline
         this._pipeline = device.createRenderPipeline({
@@ -246,7 +218,7 @@ export class Tutorial06 extends baseRendering {
             let m: Mat4 = mat4.identity();
             mat4.translate(m, vec3.fromValues(0, 0, 0.5), m);
 
-            mat4.rotateZ(m, new Date().getTime() / 1000.0, m);
+            mat4.rotateZ(m, performance.now() / 1000.0, m);
 
             //scrive il contenuto nell'uniform buffer
             this._device.queue.writeBuffer(this._uniformBuffer1, 0, m);
@@ -262,7 +234,7 @@ export class Tutorial06 extends baseRendering {
             //crea una matrice di rotazione sull'asse Z e di traslazione
             let m: Mat4 = mat4.identity();
             mat4.translate(m, vec3.fromValues(0.5, 0, 0.2), m);
-            mat4.rotateZ(m, new Date().getTime() / 1000.0, m);
+            mat4.rotateZ(m, performance.now() / 1000.0, m);
 
             //scrive il contenuto nell'uniform buffer
             this._device.queue.writeBuffer(this._uniformBuffer2, 0, m);

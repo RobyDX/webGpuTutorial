@@ -5,6 +5,7 @@
  */
 
 import { baseRendering } from "../utility/baseRendering";
+import { initWebGpu, createShader } from "../utility/webgpuInit";
 
 export class Tutorial04 extends baseRendering {
     //device, l'oggetto incaricato di creare e gestire le risorse
@@ -49,39 +50,10 @@ export class Tutorial04 extends baseRendering {
     `;
 
     async init() {
-        //ottengo il device associato alla scheda video
-        const adapter = await navigator.gpu?.requestAdapter();
-        const device = await adapter?.requestDevice();
-
-        if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
-
+        //inizializzazione di device, canvas e contesto (gli stessi passi del tutorial 00, vedi utility/webgpuInit.ts)
+        const { device, context, format: presentationFormat } = await initWebGpu();
         this._device = device;
-
-        //individua la canvas
-        const canvas = document.querySelector('canvas');
-        if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
-        }
-
-        //riceve il context associato alla canvas
-        const context = canvas.getContext('webgpu');
-
-        if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
         this._context = context;
-
-        //configura il device associandolo alla canvas usata per il rendering
-        const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-        this._context.configure({
-            device: this._device,
-            format: presentationFormat,
-        });
 
         //definisce i 4 vertici di un quadrato
         const vertexData: number[] = [
@@ -114,7 +86,7 @@ export class Tutorial04 extends baseRendering {
         device.queue.writeBuffer(this._indexBuffer, 0, new Uint32Array(indexData));
 
         //crea lo shader
-        const module = device.createShaderModule({ code: this.shader });
+        const module = await createShader(device, this.shader);
 
         //crea la pipeline
         this._pipeline = device.createRenderPipeline({

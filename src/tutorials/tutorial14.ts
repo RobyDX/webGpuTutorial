@@ -5,6 +5,7 @@
  */
 
 import { baseRendering } from "../utility/baseRendering";
+import { initWebGpu, createShader } from "../utility/webgpuInit";
 
 export class Tutorial14 extends baseRendering {
     //device, l'oggetto incaricato di creare e gestire le risorse
@@ -46,6 +47,11 @@ export class Tutorial14 extends baseRendering {
 
             let width:u32=${this.size}u;
 
+            //i workgroup coprono blocchi da 16x16: i thread in eccesso rispetto alla dimensione dei dati vanno ignorati
+            if (global_id.x >= width || global_id.y >= width) {
+                return;
+            }
+
             let index:u32=global_id.y*width+global_id.x;
 
             let x = inputBuffer[index];
@@ -74,42 +80,13 @@ export class Tutorial14 extends baseRendering {
     `;
 
     async init() {
-        //ottengo il device associato alla scheda video
-        const adapter = await navigator.gpu?.requestAdapter();
-        const device = await adapter?.requestDevice();
-
-        if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
-
+        //inizializzazione di device, canvas e contesto (gli stessi passi del tutorial 00, vedi utility/webgpuInit.ts)
+        const { device, context } = await initWebGpu();
         this._device = device;
-
-        //individua la canvas
-        const canvas = document.querySelector('canvas');
-        if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
-        }
-
-        //riceve il context associato alla canvas
-        const context = canvas.getContext('webgpu');
-
-        if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
         this._context = context;
 
-        //configura il device associandolo alla canvas usata per il rendering
-        const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-        this._context.configure({
-            device: this._device,
-            format: presentationFormat,
-        });
-
         //crea il compute shader
-        const module = this._device.createShaderModule({ code: this.shader });
+        const module = await createShader(this._device, this.shader);
 
         //crea la pipeline per il compute shader
         this._pipeline = this._device.createComputePipeline({
@@ -217,7 +194,7 @@ export class Tutorial14 extends baseRendering {
         pass.setBindGroup(0, this._bindGroup);
 
         //esegue il compute shader eseguendo un numero di workgroup per ogni lato
-        pass.dispatchWorkgroups(size / 16, size / 16, 1);
+        pass.dispatchWorkgroups(Math.ceil(size / 16), Math.ceil(size / 16), 1);
 
         //termine del compute pass
         pass.end();

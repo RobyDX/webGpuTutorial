@@ -5,6 +5,7 @@
  */
 
 import { baseRendering } from "../utility/baseRendering";
+import { initWebGpu, createShader } from "../utility/webgpuInit";
 import { Mat4, mat4 } from 'wgpu-matrix'
 
 export class Tutorial16 extends baseRendering {
@@ -130,39 +131,10 @@ export class Tutorial16 extends baseRendering {
     `;
 
     async init() {
-        //ottengo il device associato alla scheda video
-        const adapter = await navigator.gpu?.requestAdapter();
-        const device = await adapter?.requestDevice();
-
-        if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
-
+        //inizializzazione di device, canvas e contesto (gli stessi passi del tutorial 00, vedi utility/webgpuInit.ts)
+        const { device, canvas, context, format: presentationFormat } = await initWebGpu();
         this._device = device;
-
-        //individua la canvas
-        const canvas = document.querySelector('canvas');
-        if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
-        }
-
-        //riceve il context associato alla canvas
-        const context = canvas.getContext('webgpu');
-
-        if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
         this._context = context;
-
-        //configura il device associandolo alla canvas usata per il rendering
-        const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-        this._context.configure({
-            device: this._device,
-            format: presentationFormat,
-        });
 
         //definisce gli 8 vertici di un cubo
         const vertexData: number[] = [
@@ -252,7 +224,7 @@ export class Tutorial16 extends baseRendering {
         });
 
         //crea lo shader
-        const module = device.createShaderModule({ code: this.shader });
+        const module = await createShader(device, this.shader);
 
 
 
@@ -299,7 +271,7 @@ export class Tutorial16 extends baseRendering {
 
 
         //crea lo shader per lo stencil mask
-        const moduleMask = device.createShaderModule({ code: this.shaderMask });
+        const moduleMask = await createShader(device, this.shaderMask);
 
         //crea la pipeline per lo stencil mask
         this._pipelineMask = device.createRenderPipeline({
@@ -342,7 +314,7 @@ export class Tutorial16 extends baseRendering {
         });
 
         //carica un'immagine da file
-        const res = await fetch("../logo_njc.png");
+        const res = await fetch(import.meta.env.BASE_URL + "logo_njc.png");
         const blob = await res.blob();
         const source = await createImageBitmap(blob, { colorSpaceConversion: 'none' });
 
@@ -403,7 +375,7 @@ export class Tutorial16 extends baseRendering {
             }
         };
 
-        let t = Math.sin(new Date().getTime() / 1000) + 1;
+        let t = Math.sin(performance.now() / 1000) + 1;
         this._device.queue.writeBuffer(this._uniformMaskBuffer, 0, new Float32Array([this._depthTexture.width, this._depthTexture.height, t * 150, 0]));
 
         //rendering di un quadraton con lo shader per il render pass
@@ -456,13 +428,13 @@ export class Tutorial16 extends baseRendering {
         {
             //crea una matrice di rotazione
             let world: Mat4 = mat4.identity();
-            mat4.rotateY(world, new Date().getTime() / 1000.0, world);
+            mat4.rotateY(world, performance.now() / 1000.0, world);
 
             //crea una matrice associata alla camera
             let view: Mat4 = mat4.lookAt([0, 1, -2], [0, 0, 0], [0, 1, 0]);
 
             //crea una matrice di proiezione
-            let projection: Mat4 = mat4.perspective(Math.PI / 3, 1, 0.1, 1000);
+            let projection: Mat4 = mat4.perspective(Math.PI / 3, this._context.canvas.width / this._context.canvas.height, 0.1, 1000);
 
             //crea la matrice di trasformazione (prodotto tra le matrici)
             let transform: Mat4 = mat4.multiply(projection, mat4.multiply(view, world));

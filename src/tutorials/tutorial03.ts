@@ -2,9 +2,17 @@
  * Vertex Buffer
  * 
  * Memorizzazione dei vertici di un modello all'interno di un Buffer
+ *
+ * NOVITA': da questo tutorial l'inizializzazione di WebGPU (adapter, device, canvas e contesto,
+ * già vista per esteso nei tutorial 00, 01 e 02) è raccolta nella funzione initWebGpu()
+ * del file utility/webgpuInit.ts, il cui codice è riportato in fondo a questa pagina.
+ * In questo modo i prossimi tutorial mostrano solo l'argomento nuovo.
+ * Nello stesso file c'è anche createShader(), che crea lo shader e mostra gli eventuali errori
+ * di compilazione WGSL con riga e colonna (createShaderModule da solo non segnala nulla).
  */
 
 import { baseRendering } from "../utility/baseRendering";
+import { initWebGpu, createShader } from "../utility/webgpuInit";
 
 export class Tutorial03 extends baseRendering {
     //device, l'oggetto incaricato di creare e gestire le risorse
@@ -46,39 +54,10 @@ export class Tutorial03 extends baseRendering {
     `;
 
     async init() {
-        //ottengo il device associato alla scheda video
-        const adapter = await navigator.gpu?.requestAdapter();
-        const device = await adapter?.requestDevice();
-
-        if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
-
+        //inizializzazione di device, canvas e contesto (gli stessi passi del tutorial 00, vedi utility/webgpuInit.ts)
+        const { device, context, format: presentationFormat } = await initWebGpu();
         this._device = device;
-
-        //individua la canvas
-        const canvas = document.querySelector('canvas');
-        if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
-        }
-
-        //riceve il context associato alla canvas
-        const context = canvas.getContext('webgpu');
-
-        if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
         this._context = context;
-
-        //configura il device associandolo alla canvas usata per il rendering
-        const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-        this._context.configure({
-            device: this._device,
-            format: presentationFormat,
-        });
 
         //definisce un quadrato formato da 2 triangoli con 3 vertici ciascuno
         const vertexData: number[] = [
@@ -101,7 +80,7 @@ export class Tutorial03 extends baseRendering {
         device.queue.writeBuffer(this._vertexBuffer, 0, new Float32Array(vertexData));
 
         //crea lo shader
-        const module = device.createShaderModule({ code: this.shader });
+        const module = await createShader(device, this.shader);
 
         //crea la pipeline
         this._pipeline = device.createRenderPipeline({

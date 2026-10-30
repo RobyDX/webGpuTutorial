@@ -5,6 +5,7 @@
  */
 
 import { baseRendering } from "../utility/baseRendering";
+import { initWebGpu, createShader } from "../utility/webgpuInit";
 import { Mat4, mat4 } from 'wgpu-matrix'
 
 export class Tutorial13 extends baseRendering {
@@ -77,46 +78,22 @@ export class Tutorial13 extends baseRendering {
 
     async init() {
 
-        //carica un video
-        this._video = document.createElement("video");
-        this._video.src = "./earth.mp4";
-        this._video.autoplay = true;
-        this._video.loop = true;
-        this._video.play();
-
-        //ottengo il device associato alla scheda video
-        const adapter = await navigator.gpu?.requestAdapter();
-        const device = await adapter?.requestDevice();
-
-        if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
-
+        //inizializzazione di device, canvas e contesto (gli stessi passi del tutorial 00, vedi utility/webgpuInit.ts)
+        const { device, canvas, context, format: presentationFormat } = await initWebGpu();
         this._device = device;
-
-        //individua la canvas
-        const canvas = document.querySelector('canvas');
-        if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
-        }
-
-        //riceve il context associato alla canvas
-        const context = canvas.getContext('webgpu');
-
-        if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
-        }
         this._context = context;
 
-        //configura il device associandolo alla canvas usata per il rendering
-        const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-        this._context.configure({
-            device: this._device,
-            format: presentationFormat,
-        });
+        //carica un video
+        //muted è necessario: i browser bloccano l'avvio automatico dei video con audio
+        this._video = document.createElement("video");
+        this._video.src = import.meta.env.BASE_URL + "earth.mp4";
+        this._video.autoplay = true;
+        this._video.loop = true;
+        this._video.muted = true;
+        this._video.playsInline = true;
+
+        //play() restituisce una promise: se il browser rifiuta la riproduzione lo segnaliamo in console
+        await this._video.play().catch(e => console.warn("Impossibile avviare il video:", e));
 
         //definisce gli 8 vertici di un cubo
         const vertexData: number[] = [
@@ -199,7 +176,7 @@ export class Tutorial13 extends baseRendering {
         });
 
         //crea lo shader
-        const module = device.createShaderModule({ code: this.shader });
+        const module = await createShader(device, this.shader);
 
         //crea la pipeline
         this._pipeline = device.createRenderPipeline({
@@ -303,7 +280,7 @@ export class Tutorial13 extends baseRendering {
             let view: Mat4 = mat4.lookAt([1, 1, -1], [0, 0, 0], [0, 1, 0]);
 
             //crea una matrice di proiezione
-            let projection: Mat4 = mat4.perspective(Math.PI / 3, 1, 0.1, 1000);
+            let projection: Mat4 = mat4.perspective(Math.PI / 3, this._context.canvas.width / this._context.canvas.height, 0.1, 1000);
 
             //crea la matrice di trasformazione (prodotto tra le matrici)
             let transform: Mat4 = mat4.multiply(projection, mat4.multiply(view, world));
@@ -343,11 +320,18 @@ export class Tutorial13 extends baseRendering {
     }
 
 
-    destroy(): void {
+    async destroy(): Promise<void> {
         //interrompi il rendering
         cancelAnimationFrame(this.frameId);
 
+        //ferma il video e libera il file
+        this._video.pause();
+        this._video.removeAttribute("src");
+        this._video.load();
+
         //elimina immediatamente tutte le risorse per non lasciarle in memoria
+        await this._device.queue.onSubmittedWorkDone();
+
         this._vertexBuffer.destroy();
         this._indexBuffer.destroy();
         this._uniformBuffer.destroy();

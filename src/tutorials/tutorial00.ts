@@ -18,9 +18,9 @@ export class Tutorial00 extends baseRendering {
         const adapter = await navigator.gpu?.requestAdapter();
         const device = await adapter?.requestDevice();
 
+        //se WebGPU non è disponibile viene lanciato un errore: la pagina lo mostra all'utente e non avvia il rendering
         if (!device) {
-            alert("browser o dispositivo non compatibile")
-            return;
+            throw new Error("browser o dispositivo non compatibile");
         }
 
         this._device = device;
@@ -28,16 +28,14 @@ export class Tutorial00 extends baseRendering {
         //individua la canvas
         const canvas = document.querySelector('canvas');
         if (!canvas) {
-            alert("canvas non presente nella pagina")
-            return;
+            throw new Error("canvas non presente nella pagina");
         }
 
         //riceve il context associato alla canvas
         const context = canvas.getContext('webgpu');
 
         if (!context) {
-            alert("browser o dispositivo non compatibile")
-            return;
+            throw new Error("browser o dispositivo non compatibile");
         }
         this._context = context;
 
