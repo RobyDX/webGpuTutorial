@@ -9,7 +9,7 @@ import gltfSource from "./utility/gltf.ts?raw";
 const utilities = [
     { marker: "initWebGpu(", file: "utility/webgpuInit.ts", source: initSource },
     { marker: "utility/geometry", file: "utility/geometry.ts", source: geometrySource },
-    { marker: "loadGltf(", file: "utility/gltf.ts", source: gltfSource },
+    { marker: "utility/gltf", file: "utility/gltf.ts", source: gltfSource },
 ];
 
 //le classi di tutti i tutorial (tutorial00.ts -> Tutorial00, ...)
