@@ -1,7 +1,12 @@
 /**
  * Index Buffer
- * 
- * Memorizzazione degli indici di un modello all'interno di un Buffer
+ *
+ * Memorizzazione degli indici di un modello all'interno di un Buffer.
+ *
+ * Nel tutorial precedente i vertici condivisi tra i due triangoli erano scritti due volte. Con un
+ * index buffer i vertici si elencano una volta sola (qui 4, per il quadrato) e i triangoli si
+ * descrivono con gli indici dei vertici (6 indici). Si risparmia memoria, e nei modelli reali la
+ * differenza è grande.
  */
 
 import { baseRendering } from "../utility/baseRendering";

@@ -1,7 +1,16 @@
 /**
  * Shaders
- * 
- * Rendering di un triangolo tramite Shader
+ *
+ * Rendering di un triangolo tramite Shader.
+ *
+ * Gli shader sono i programmi, scritti in WGSL, che la GPU esegue per disegnare:
+ *
+ * - il vertex shader viene eseguito per ogni vertice e ne calcola la posizione sullo schermo
+ * - il fragment shader viene eseguito per ogni pixel coperto dalla forma e ne calcola il colore
+ *
+ * La pipeline di rendering collega i due shader e indica il formato del render target. In questo
+ * tutorial le tre posizioni del triangolo sono scritte direttamente nello shader e il colore è sempre
+ * rosso.
  */
 import { baseRendering } from "../utility/baseRendering";
 

@@ -1,7 +1,14 @@
 /**
  * Depth Buffer
- * 
- * Gestione della profondità tramite ZBuffer
+ *
+ * Gestione della profondità tramite ZBuffer.
+ *
+ * Quando due oggetti si sovrappongono serve la profondità di ogni pixel per decidere quale sta
+ * davanti. Il depth buffer è una texture che memorizza il valore Z del pixel più vicino disegnato
+ * finora: un nuovo pixel viene scritto solo se è più vicino (depthCompare 'less').
+ *
+ * Qui i due quadrati si trovano ad altezze diverse, ognuno con il proprio uniform buffer: quello più
+ * vicino copre sempre l'altro, qualunque sia l'ordine in cui vengono disegnati.
  */
 
 import { baseRendering } from "../utility/baseRendering";

@@ -1,7 +1,14 @@
 /**
  * Render to Texture
- * 
- * Rendering su texture per realizzare effetti a più step
+ *
+ * Rendering su texture per realizzare effetti a più step.
+ *
+ * Invece di disegnare sullo schermo, un render pass può avere come destinazione una texture, che nei
+ * passi successivi si usa come qualsiasi altra texture. Qui il cubo con il logo viene disegnato prima
+ * in una texture da 512x512 (con il suo depth buffer), che viene poi applicata alle facce di un
+ * secondo cubo.
+ *
+ * È la base di molti effetti: specchi, schermi dentro la scena, post-processing.
  */
 
 import { baseRendering } from "../utility/baseRendering";

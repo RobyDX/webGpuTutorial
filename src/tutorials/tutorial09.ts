@@ -1,7 +1,12 @@
 /**
  * Render Bundle
- * 
- * Ottimizzazione dei rendering tramite memorizzazione dei comandi all'interno di render bundle
+ *
+ * Ottimizzazione dei rendering tramite memorizzazione dei comandi all'interno di render bundle.
+ *
+ * Disegnare molti oggetti richiede di ripetere ad ogni frame le stesse istruzioni (pipeline, buffer,
+ * bind group, draw), con un costo per la CPU. Un render bundle registra questi comandi una volta sola,
+ * all'avvio, e poi li esegue ad ogni frame con un unico comando. I dati degli uniform buffer possono
+ * comunque cambiare tra un frame e l'altro. Qui si disegnano molti cubi.
  */
 
 import { baseRendering } from "../utility/baseRendering";

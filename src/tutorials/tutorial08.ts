@@ -1,7 +1,14 @@
 /**
  * Texture
- * 
- * Utilizzo di immagini Texture all'interno degli shader
+ *
+ * Utilizzo di immagini Texture all'interno degli shader.
+ *
+ * Una texture è un'immagine caricata nella memoria della GPU. Ogni vertice ha delle coordinate texture
+ * (u, v) che indicano quale punto dell'immagine gli corrisponde, e il fragment shader legge il colore
+ * tramite un sampler, che decide come interpolare tra i pixel (filtro lineare) e cosa fare fuori dai
+ * bordi (repeat).
+ *
+ * L'immagine viene scaricata con fetch e copiata nella texture con copyExternalImageToTexture.
  */
 
 import { baseRendering } from "../utility/baseRendering";

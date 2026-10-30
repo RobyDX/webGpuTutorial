@@ -1,7 +1,11 @@
 /**
  * Testo su una Texture
- * 
- * Utilizzare una canvas come texture per disegnare testo
+ *
+ * Utilizzare una canvas come texture per disegnare testo.
+ *
+ * WebGPU non ha funzioni per scrivere testo. Un modo semplice è disegnarlo su una canvas 2D, fuori
+ * dalla pagina, con le normali funzioni di Canvas (fillText), e copiare il risultato ad ogni frame in
+ * una texture con copyExternalImageToTexture. Qui la texture mostra data e ora.
  */
 
 import { baseRendering } from "../utility/baseRendering";

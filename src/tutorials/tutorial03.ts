@@ -1,7 +1,12 @@
 /**
  * Vertex Buffer
- * 
- * Memorizzazione dei vertici di un modello all'interno di un Buffer
+ *
+ * Memorizzazione dei vertici di un modello all'interno di un Buffer.
+ *
+ * I vertici non sono più scritti nello shader ma in un vertex buffer: un blocco di memoria della GPU,
+ * riempito dal codice, in cui ogni vertice ha una posizione e un colore. La pipeline descrive come
+ * leggerlo (arrayStride e attributes) e il comando di disegno indica quanti vertici usare. Il modello
+ * è un quadrato formato da due triangoli, quindi da 6 vertici.
  *
  * NOVITA': da questo tutorial l'inizializzazione di WebGPU (adapter, device, canvas e contesto,
  * già vista per esteso nei tutorial 00, 01 e 02) è raccolta nella funzione initWebGpu()

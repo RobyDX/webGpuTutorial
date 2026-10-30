@@ -28,12 +28,84 @@ const nextButton = document.querySelector<HTMLButtonElement>("#next")!;
 
 let t: baseRendering | null = null;
 
+//ricava la descrizione di un tutorial dal commento all'inizio del suo codice e la mostra sotto il pannello.
+//Nel commento: le righe vuote separano i paragrafi, le righe che iniziano con "-" o con "1)" sono elenchi
+//(le righe più rientrate continuano la voce precedente), i paragrafi che iniziano con "NOTA:" non vengono mostrati.
+function showAbout(code: string) {
+    const about = document.querySelector<HTMLElement>("#about")!;
+    const container = document.querySelector<HTMLElement>("#about-text")!;
+    container.replaceChildren();
+
+    const header = code.match(/\/\*\*([\s\S]*?)\*\//);
+    if (!header) {
+        about.hidden = true;
+        return;
+    }
+
+    //righe del commento senza gli asterischi; la prima riga non vuota è il titolo, già mostrato nel pannello
+    const lines = header[1].split("\n").map(l => l.replace(/^\s*\* ?/, "").replace(/\s+$/, ""));
+    const firstLine = lines.findIndex(l => l !== "");
+    const blocks: string[][] = [[]];
+    for (const line of lines.slice(firstLine + 1)) {
+        if (line === "") {
+            blocks.push([]);
+        } else {
+            blocks[blocks.length - 1].push(line);
+        }
+    }
+
+    for (const block of blocks) {
+        if (block.length === 0 || block[0].startsWith("NOTA:")) {
+            continue;
+        }
+
+        let list: HTMLUListElement | null = null;
+        let item: HTMLElement | null = null;
+        let paragraph: HTMLElement | null = null;
+
+        for (const line of block) {
+            const bullet = line.trim().match(/^(-|\d+\))\s+(.*)$/);
+            if (bullet) {
+                //nuova voce di un elenco
+                if (!list) {
+                    list = document.createElement("ul");
+                    container.appendChild(list);
+                }
+                const li = document.createElement("li");
+                const marker = document.createElement("span");
+                marker.className = "marker";
+                marker.textContent = bullet[1] === "-" ? "•" : bullet[1];
+                item = document.createElement("span");
+                item.textContent = bullet[2];
+                li.append(marker, item);
+                list.appendChild(li);
+                paragraph = null;
+            } else if (item && /^\s/.test(line)) {
+                //riga rientrata: continua la voce precedente
+                item.textContent += " " + line.trim();
+            } else {
+                //testo normale: le righe consecutive formano un unico paragrafo
+                if (!paragraph) {
+                    paragraph = document.createElement("div");
+                    container.appendChild(paragraph);
+                    list = null;
+                    item = null;
+                }
+                paragraph.textContent += (paragraph.textContent ? " " : "") + line.trim();
+            }
+        }
+    }
+
+    about.hidden = container.childElementCount === 0;
+}
+
 //carica un tutorial: ferma quello precedente, mostra il codice, esegue init e avvia il rendering
 async function load(link: HTMLAnchorElement) {
     const n = link.getAttribute("data-tutorial")!;
 
     //pannello con numero, titolo e descrizione del tutorial
     document.querySelector("#tutorial-number")!.textContent = `Tutorial ${link.dataset.number}`;
+    document.querySelector("#canvas-caption")!.textContent = `${link.dataset.number} · ${link.querySelector(".tile-name")!.textContent}`;
     document.querySelector("#tutorial-title")!.textContent = link.querySelector(".tile-name")!.textContent;
     document.querySelector("#tutorial-description")!.textContent = link.dataset.description ?? "";
 
@@ -61,6 +133,7 @@ async function load(link: HTMLAnchorElement) {
 
     const path = `./tutorials/tutorial${n}.ts`;
     let code = sources[path];
+    showAbout(code);
     for (const u of utilities) {
         if (code.includes(u.marker)) {
             code += "\n\n// ------------------------------------------------------------\n" +
@@ -114,6 +187,59 @@ window.addEventListener("hashchange", () => {
         select(link, false);
     }
 });
+
+//pulsante sulla canvas: nasconde il pannello e la descrizione per dare più spazio alla canvas.
+//La scelta viene ricordata dal browser (se localStorage non è disponibile semplicemente non viene salvata)
+const viewer = document.querySelector<HTMLElement>("#viewer")!;
+const toggleButton = document.querySelector<HTMLButtonElement>("#toggle-side")!;
+
+function setFocus(on: boolean, save: boolean) {
+    viewer.classList.toggle("focus", on);
+    toggleButton.setAttribute("aria-pressed", String(on));
+    toggleButton.textContent = on ? "⤡ Mostra pannello" : "⤢ Nascondi pannello";
+    if (save) {
+        try {
+            localStorage.setItem("viewerFocus", on ? "1" : "0");
+        } catch { }
+    }
+}
+
+toggleButton.addEventListener("click", () => {
+    setFocus(!viewer.classList.contains("focus"), true);
+    //la canvas cambia dimensione: la si riporta in vista
+    viewer.scrollIntoView({ block: "start" });
+});
+
+try {
+    setFocus(localStorage.getItem("viewerFocus") === "1", false);
+} catch {
+    setFocus(false, false);
+}
+
+//pulsante fisso: porta al codice del tutorial, e quando si è nel codice riporta in alto alla canvas
+const jumpButton = document.querySelector<HTMLButtonElement>("#jump")!;
+const codeSection = document.querySelector<HTMLDetailsElement>("#code")!;
+const smooth = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+
+//si considera "nel codice" quando l'inizio della sezione del codice è nella metà alta della finestra
+const inCode = () => codeSection.getBoundingClientRect().top < window.innerHeight * 0.5;
+
+function updateJumpButton() {
+    jumpButton.innerHTML = inCode() ? "&uarr; Torna al tutorial" : "&darr; Vai al codice";
+}
+
+jumpButton.addEventListener("click", () => {
+    if (inCode()) {
+        document.querySelector("#viewer")!.scrollIntoView({ behavior: smooth, block: "start" });
+    } else {
+        codeSection.open = true;
+        codeSection.scrollIntoView({ behavior: smooth, block: "start" });
+    }
+});
+
+window.addEventListener("scroll", updateJumpButton, { passive: true });
+window.addEventListener("resize", updateJumpButton);
+updateJumpButton();
 
 //tutorial mostrato all'avvio: quello indicato nell'indirizzo (es. #21), altrimenti il tutorial 08
 const start = location.hash.replace("#", "");

@@ -1,7 +1,12 @@
 /**
  * Uniform Buffer
- * 
- * Memorizzazione dei dati dinamici di un modello all'interno di un buffer
+ *
+ * Memorizzazione dei dati dinamici di un modello all'interno di un buffer.
+ *
+ * Un uniform buffer permette al codice di passare dati agli shader, e di cambiarli ad ogni frame. Qui
+ * contiene una matrice di rotazione, aggiornata di continuo con writeBuffer, che fa ruotare il
+ * quadrato. Il bind group collega il buffer alla posizione (group e binding) in cui lo shader lo
+ * dichiara.
  */
 
 import { baseRendering } from "../utility/baseRendering";

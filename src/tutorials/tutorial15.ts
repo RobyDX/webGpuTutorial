@@ -1,7 +1,14 @@
 /**
  * Sobel Filter
- * 
- * Esempio di utilizzo di compute shader in fase di rendering
+ *
+ * Esempio di utilizzo di compute shader in fase di rendering.
+ *
+ * Il filtro di Sobel evidenzia i contorni di un'immagine: per ogni pixel confronta i colori dei pixel
+ * vicini. Un compute shader lo applica alla texture del logo e scrive il risultato in una storage
+ * texture, che viene poi usata per disegnare il cubo. Nello stesso frame un compute pass precede
+ * quindi il render pass.
+ *
+ * Clicca sulla canvas per alternare l'immagine originale e quella filtrata.
  */
 
 import { baseRendering } from "../utility/baseRendering";

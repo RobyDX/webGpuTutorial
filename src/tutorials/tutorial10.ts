@@ -1,7 +1,13 @@
 /**
  * Geometry Instancing
- * 
- * Rendering multiplo di oggetti tramite il meccanismo di instancing
+ *
+ * Rendering multiplo di oggetti tramite il meccanismo di instancing.
+ *
+ * Con l'instancing un solo comando di disegno produce molte copie dello stesso modello, invece di un
+ * draw per ogni copia. I dati che cambiano da una copia all'altra (qui il colore) stanno in un secondo
+ * vertex buffer con stepMode 'instance', letto una volta per istanza invece che una volta per vertice.
+ * Lo shader riconosce la copia che sta disegnando con instance_index, usato anche per scegliere la sua
+ * matrice di trasformazione.
  */
 
 import { baseRendering } from "../utility/baseRendering";

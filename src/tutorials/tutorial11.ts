@@ -1,7 +1,16 @@
 /**
  * MSAA
- * 
- * Miglioramento della resa grafica tramite Multi Sample Antialasing
+ *
+ * Miglioramento della resa grafica tramite Multi Sample Antialiasing (MSAA).
+ *
+ * I bordi dei triangoli sullo schermo appaiono a scalini (aliasing). Con MSAA ogni pixel viene
+ * campionato più volte (qui 4) e il colore finale è la media dei campioni, che rende i bordi più
+ * morbidi.
+ *
+ * Servono texture con sampleCount 4 per colore e profondità, una pipeline con multisample e un
+ * resolveTarget, la texture finale in cui il risultato viene ridotto a un campione per pixel.
+ *
+ * Clicca sulla canvas per attivare e disattivare MSAA e osservare i bordi.
  */
 
 import { baseRendering } from "../utility/baseRendering";

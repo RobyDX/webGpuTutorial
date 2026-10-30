@@ -1,7 +1,13 @@
 /**
  * Utilizzo di Video
- * 
- * Utilizzo di Video come texture dei modelli
+ *
+ * Utilizzo di Video come texture dei modelli.
+ *
+ * Un elemento video HTML può essere usato direttamente come texture con importExternalTexture: ad ogni
+ * frame si ottiene l'immagine corrente del video, senza copiarla. Nello shader la texture è di tipo
+ * texture_external e si legge con textureSampleBaseClampToEdge.
+ *
+ * Il video parte senza audio (muted): i browser bloccano l'avvio automatico dei video con l'audio.
  */
 
 import { baseRendering } from "../utility/baseRendering";

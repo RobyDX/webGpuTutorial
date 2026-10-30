@@ -19,6 +19,7 @@
       --accent: #5b94ff;
       --radius: 16px;
       --code-bg: #0c1226;
+      --on-accent: #0a0f1f;
     }
 
     @media (prefers-color-scheme: light) {
@@ -32,6 +33,7 @@
         --muted: #56648a;
         --accent: #2f6df0;
         --code-bg: #f8faff;
+        --on-accent: #ffffff;
       }
     }
 
@@ -96,6 +98,7 @@
     }
 
     .canvas-wrap {
+      position: relative;
       border-radius: var(--radius);
       overflow: hidden;
       border: 1px solid var(--border);
@@ -154,6 +157,61 @@
 
     #info:empty {
       display: none;
+    }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .about {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 22px 20px;
+    }
+
+    .about[hidden] {
+      display: none;
+    }
+
+    .about h3 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    #about-text {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 0.95rem;
+    }
+
+    #about-text ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #about-text li {
+      display: flex;
+      gap: 8px;
+    }
+
+    #about-text .marker {
+      flex: none;
+      min-width: 1.2em;
+      font-weight: 700;
+      color: var(--accent);
     }
 
     .nav {
@@ -300,7 +358,34 @@
     .c-compute { --accent: #fb7185; }
     .c-light { --accent: #f472b6; }
 
+    /* ---------- pulsante fisso codice / torna su ---------- */
+    .jump {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 10;
+      font: inherit;
+      font-weight: 700;
+      color: var(--on-accent);
+      background: var(--accent);
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 20px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55);
+      transition: transform 0.15s, filter 0.15s;
+    }
+
+    .jump:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
     /* ---------- codice ---------- */
+    .code {
+      scroll-margin-top: 16px;
+    }
+
     .code {
       margin-top: 40px;
       background: var(--surface);
@@ -341,6 +426,66 @@
       color: var(--accent);
     }
 
+    /* ---------- barra sopra la canvas e modalità "solo canvas" ---------- */
+    .canvas-tools {
+      position: absolute;
+      inset: 10px 10px auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .canvas-tools button,
+    .canvas-caption {
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #fff;
+      background: rgba(10, 15, 31, 0.62);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      padding: 5px 12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .canvas-tools button {
+      margin-left: auto;
+      cursor: pointer;
+      pointer-events: auto;
+      opacity: 0.75;
+      transition: opacity 0.15s;
+    }
+
+    .canvas-tools button:hover,
+    .canvas-tools button:focus-visible {
+      opacity: 1;
+    }
+
+    /* il nome del tutorial compare sulla canvas solo quando il pannello è nascosto */
+    .canvas-caption {
+      display: none;
+    }
+
+    .viewer.focus {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+    }
+
+    .viewer.focus .side {
+      display: none;
+    }
+
+    .viewer.focus .canvas-caption {
+      display: inline-block;
+    }
+
+    /* la canvas si allarga quanto la finestra, mantenendo il rapporto 4:3 e senza superare l'altezza dello schermo */
+    .viewer.focus .canvas-wrap {
+      width: min(100%, calc((100vh - 32px) * 4 / 3));
+    }
+
     @media (max-width: 960px) {
       .viewer {
         grid-template-columns: minmax(0, 1fr);
@@ -369,8 +514,13 @@
     <section class="viewer" id="viewer">
       <div class="canvas-wrap">
         <canvas width="800" height="600"></canvas>
+        <div class="canvas-tools">
+          <span class="canvas-caption" id="canvas-caption"></span>
+          <button type="button" id="toggle-side" aria-pressed="false">&#x2922; Nascondi pannello</button>
+        </div>
       </div>
 
+      <div class="side">
       <aside class="panel">
         <span class="panel-tag" id="tutorial-number">&nbsp;</span>
         <h2 id="tutorial-title">&nbsp;</h2>
@@ -381,6 +531,13 @@
           <button type="button" id="next">Successivo &rarr;</button>
         </div>
       </aside>
+
+      <!-- descrizione del tutorial, ricavata dal commento all'inizio del suo codice (div e non p: vedi nota sopra) -->
+      <section class="about" id="about" hidden>
+        <h3>Descrizione</h3>
+        <div id="about-text"></div>
+      </section>
+      </div>
     </section>
 
     <div class="section-head">
@@ -511,7 +668,7 @@
         </a>
     </nav>
 
-    <details class="code" open>
+    <details class="code" id="code" open>
       <summary>Codice sorgente del tutorial</summary>
       <textarea id="codetxt" readonly spellcheck="false" wrap="off"></textarea>
     </details>
@@ -520,6 +677,9 @@
       Il codice è su <a href="https://github.com/RobyDX/webGpuTutorial">GitHub</a>.
     </footer>
   </div>
+
+  <!-- pulsante fisso: porta al codice, e dal codice riporta in alto (vedi main.ts) -->
+  <button type="button" class="jump" id="jump">&darr; Vai al codice</button>
 
   <script type="module" src="/src/main.ts"></script>
 </body>

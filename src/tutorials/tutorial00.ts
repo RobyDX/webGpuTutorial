@@ -1,7 +1,15 @@
 /**
  * Inizializzazione WebGPU
- * 
- * Creazione di un progetto di base
+ *
+ * Creazione di un progetto di base.
+ *
+ * Per usare WebGPU servono tre oggetti: l'adapter (rappresenta la scheda video), il device (con cui si
+ * creano e si gestiscono tutte le risorse) e il contesto della canvas, che va configurato con il
+ * formato dei pixel preferito dal sistema.
+ *
+ * Il tutorial non disegna nulla e la canvas resta vuota. Mostra però la struttura che hanno tutti i
+ * tutorial: init() prepara le risorse, draw() registra i comandi e li invia alla GPU ad ogni frame,
+ * destroy() libera le risorse.
  */
 import { baseRendering } from "../utility/baseRendering";
 

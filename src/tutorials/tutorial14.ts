@@ -1,7 +1,17 @@
 /**
  * Compute Shader
- * 
- * Utilizzo della scheda video per l'esecuzione di calcoli
+ *
+ * Utilizzo della scheda video per l'esecuzione di calcoli.
+ *
+ * La GPU può eseguire anche calcoli generici, senza disegnare nulla, tramite i compute shader. Il
+ * lavoro viene suddiviso in workgroup (qui da 16x16 thread) e ogni thread elabora un elemento di uno
+ * storage buffer.
+ *
+ * Qui si calcola il seno di un milione di valori con la serie di Taylor, e il tempo viene confrontato
+ * con lo stesso calcolo in JavaScript. I risultati si leggono copiando il buffer in un buffer
+ * mappabile (mapAsync).
+ *
+ * Clicca nuovamente per eseguire altri test.
  */
 
 import { baseRendering } from "../utility/baseRendering";

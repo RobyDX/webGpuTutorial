@@ -1,7 +1,16 @@
 /**
  * Matrici di trasformazione
- * 
- * Utilizzo delle matrici di trasformazione per trasformare i modelli all'interno dello Shader
+ *
+ * Utilizzo delle matrici di trasformazione per trasformare i modelli all'interno dello Shader.
+ *
+ * Per passare da un modello 3D allo schermo si usano tre matrici:
+ *
+ * - world: posizione, rotazione e scala dell'oggetto nel mondo
+ * - view: posizione e orientamento della camera
+ * - projection: la prospettiva
+ *
+ * Il loro prodotto viene calcolato nel codice (con la libreria wgpu-matrix) e inviato allo shader con
+ * un uniform buffer. Qui un cubo ruota osservato da una camera con prospettiva.
  */
 
 import { baseRendering } from "../utility/baseRendering";

@@ -2,8 +2,14 @@ import { baseRendering } from "../utility/baseRendering";
 
 /**
  * Render target
- * 
- * Rendering di una canvas con pulizia dello schermo
+ *
+ * Rendering di una canvas con pulizia dello schermo.
+ *
+ * Ogni frame viene disegnato in una texture, il render target, che poi appare nella canvas. Un render
+ * pass descrive su quale texture disegnare e cosa fare all'inizio: con loadOp 'clear' la texture viene
+ * riempita con il colore clearValue, con storeOp 'store' il risultato viene conservato.
+ *
+ * Clicca sulla canvas per cambiare il colore dello sfondo.
  */
 export class Tutorial01 extends baseRendering {
 

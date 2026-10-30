@@ -1,7 +1,14 @@
 /**
  * Query Set
- * 
- * Utilizzo di funzionalità di analisi
+ *
+ * Utilizzo di funzionalità di analisi.
+ *
+ * Un query set di tipo timestamp permette di misurare quanto tempo la GPU impiega per eseguire un
+ * render pass: la GPU scrive l'istante di inizio e di fine del pass, i valori vengono risolti in un
+ * buffer e letti dal codice. Il tempo mostrato è la media dell'ultimo secondo.
+ *
+ * Serve la funzionalità 'timestamp-query', che non tutti i dispositivi offrono, e la precisione può
+ * essere limitata dal browser.
  */
 
 import { baseRendering } from "../utility/baseRendering";

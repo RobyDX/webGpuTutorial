@@ -1,7 +1,15 @@
 /**
  * Stencil Buffer
- * 
- * Creazione di maschere di rendering tramite Stencil Buffer
+ *
+ * Creazione di maschere di rendering tramite Stencil Buffer.
+ *
+ * Lo stencil buffer contiene un valore intero (8 bit) per ogni pixel, che si può scrivere e usare per
+ * decidere se disegnare. Qui si usano due pipeline:
+ *
+ * 1) la maschera: disegna una forma con confronto 'never' e failOp 'replace', quindi non scrive alcun colore ma scrive nello stencil il valore di riferimento
+ * 2) il cubo: viene disegnato solo dove lo stencil è uguale al valore di riferimento, cioè dentro la maschera
+ *
+ * Il formato della texture di profondità diventa depth24plus-stencil8.
  */
 
 import { baseRendering } from "../utility/baseRendering";
